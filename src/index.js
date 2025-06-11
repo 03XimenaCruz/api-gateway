@@ -19,7 +19,9 @@ const PORT = process.env.PORT || 3000;
 
 // Validar BID_SERVICE_URL para WebSocket
 const BID_SERVICE_URL = process.env.BID_SERVICE_URL || 'http://192.168.1.181:3003';
-const WS_TARGET = BID_SERVICE_URL.replace(/^http/, 'ws');
+const WS_TARGET = process.env.NODE_ENV === 'production' 
+  ? 'wss://bid-service-production.up.railway.app' 
+  : 'ws://localhost:3003';
 
 console.log('📡 BID_SERVICE_URL:', BID_SERVICE_URL);
 console.log('📡 WebSocket target:', WS_TARGET);
