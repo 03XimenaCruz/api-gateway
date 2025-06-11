@@ -1,0 +1,14 @@
+version: '3.8'
+services:
+  api-gateway:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - AUTH_SERVICE_URL=http://192.168.1.181:3001
+      - AUCTION_SERVICE_URL=http://192.168.1.203:3002
+      - BID_SERVICE_URL=http://192.168.1.181:3003
+    env_file:
+      - .env
