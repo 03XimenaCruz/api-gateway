@@ -66,20 +66,21 @@ router.use('/', httpProxy(AUTH_SERVICE_URL, {
   
   // ✅ Decorar el body de la request
   proxyReqBodyDecorator: (bodyContent, srcReq) => {
+  if (srcReq.method === 'POST' || srcReq.method === 'PUT') {
     try {
-      if (srcReq.method === 'POST' || srcReq.method === 'PUT') {
-        const body = JSON.parse(bodyContent.toString());
-        console.log('📝 Request body to AUTH service:', {
-          ...body,
-          password: body.password ? '***' : undefined // Ocultar password en logs
-        });
-        return JSON.stringify(body);
-      }
+      const body = srcReq.body; // Usar req.body directamente
+      console.log('📝 Request body to AUTH service:', {
+        ...body,
+        password: body.password ? '***' : undefined
+      });
+      return JSON.stringify(body); // Convertir a JSON para el proxy
     } catch (error) {
-      console.warn('⚠️ Could not parse request body for AUTH service:', error.message);
+      console.warn('⚠️ Could not process request body for AUTH service:', error.message);
+      return bodyContent; // Devolver el contenido original en caso de error
     }
-    return bodyContent;
-  },
+  }
+  return bodyContent;
+},
 
   // ✅ Decorar la respuesta del auth service
   userResDecorator: (proxyRes, proxyResData, userReq, userRes) => {
