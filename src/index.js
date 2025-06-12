@@ -16,21 +16,17 @@ const app = express();
 const server = http.createServer(app);
 const PORT = process.env.PORT || 3000;
 
-// ✅ CONFIGURAR TRUST PROXY PRIMERO (para Railway y otros proxies)
+// ✅ CONFIGURAR TRUST PROXY PRIMERO (para Railway, Heroku, etc.)
 app.set('trust proxy', true);
 
 // ✅ CORS DEBE IR PRIMERO - ANTES DE TODO
 // corsMiddleware ahora es un array [debugCors, corsMiddleware]
 app.use(corsMiddleware);
 
-// ✅ Luego rate limiting (que necesita trust proxy)
-app.use(rateLimiter);
-
-// ✅ Después logging
-app.use(logger);
-
-// ✅ Finalmente JSON parsing
+// Luego los demás middlewares
 app.use(express.json());
+app.use(rateLimiter);
+app.use(logger);
 
 // Validar BID_SERVICE_URL para WebSocket
 const BID_SERVICE_URL = process.env.BID_SERVICE_URL || 'http://192.168.1.181:3003';
