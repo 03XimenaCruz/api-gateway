@@ -16,9 +16,8 @@ router.use('/', httpProxy(AUTH_SERVICE_URL, {
   // Configurar headers correctamente
   proxyReqOptDecorator: (proxyReqOpts, srcReq) => {
     proxyReqOpts.headers = {
-      ...srcReq.headers,
-      'X-Forwarded-For': srcReq.ip,
-      'X-Forwarded-Proto': srcReq.protocol
+      ...srcReq.headers
+      // ✅ Removido X-Forwarded-For manual - Express lo maneja automáticamente
     };
     return proxyReqOpts;
   },
