@@ -7,8 +7,8 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3000
-      - AUTH_SERVICE_URL=http://192.168.1.181:3001
-      - AUCTION_SERVICE_URL=http://192.168.1.203:3002
-      - BID_SERVICE_URL=http://192.168.1.181:3003
+      - AUTH_SERVICE_URL=https://auth-service-production-efff.up.railway.app
+      - AUCTION_SERVICE_URL=https://auction-service-production-0633.up.railway.app
+      - BID_SERVICE_URL=https://bid-service-production.up.railway.app
     env_file:
       - .env
