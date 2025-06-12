@@ -30,3 +30,4 @@ ENTRYPOINT ["dumb-init", "--"]
 
 # Comando de inicio
 CMD ["npm", "start"]
+
