@@ -86,15 +86,31 @@ app.options('/api/auth/*', (req, res) => {
 
 // Manejo de errores
 app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ error: 'Something went wrong!' });
+  console.error('❌ Error en API Gateway:', {
+    message: err.message,
+    stack: err.stack?.split('\n')[0],
+    url: req.url,
+    method: req.method,
+    ip: req.ip
+  });
+
+  // No enviar stack trace en producción
+  const isDev = process.env.NODE_ENV !== 'production';
+  
+  res.status(err.status || 500).json({
+    error: 'Internal Server Error',
+    message: isDev ? err.message : 'Something went wrong!',
+    ...(isDev && { stack: err.stack })
+  });
 });
 
 // 404 Handler
 app.use('*', (req, res) => {
+  console.log(`📍 404 - Ruta no encontrada: ${req.method} ${req.originalUrl} from ${req.ip}`);
   res.status(404).json({
     error: 'Endpoint no encontrado',
-    path: req.originalUrl
+    path: req.originalUrl,
+    method: req.method
   });
 });
 
