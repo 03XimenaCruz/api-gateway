@@ -4,22 +4,17 @@ const { AUTH_SERVICE_URL } = require('../config/env');
 
 const router = express.Router();
 
-// Middleware para manejar OPTIONS requests específicamente
-router.options('*', (req, res) => {
-  console.log('🔄 OPTIONS request received for:', req.originalUrl);
-  res.status(200).end();
-});
-
-// Configuración del proxy con mejor manejo de errores
+// ✅ CORREGIDO: El path correcto para el auth service
 router.use('/', httpProxy(AUTH_SERVICE_URL, {
   proxyReqPathResolver: (req) => {
+    // Como el gateway ya maneja /api/auth, pasamos la ruta completa
     const path = `/api/auth${req.url}`;
-    console.log(`🔄 Proxying AUTH request: ${req.method} ${req.originalUrl} -> ${AUTH_SERVICE_URL}${path}`);
+    console.log(`🔄 Proxying AUTH: ${req.method} ${req.url} -> ${AUTH_SERVICE_URL}${path}`);
     return path;
   },
   
+  // Configurar headers correctamente
   proxyReqOptDecorator: (proxyReqOpts, srcReq) => {
-    // Asegurar que se pasen todos los headers necesarios
     proxyReqOpts.headers = {
       ...srcReq.headers,
       'X-Forwarded-For': srcReq.ip,
@@ -28,8 +23,9 @@ router.use('/', httpProxy(AUTH_SERVICE_URL, {
     return proxyReqOpts;
   },
 
+  // Manejar errores de proxy
   proxyErrorHandler: (err, res, next) => {
-    console.error('❌ AUTH Service Proxy Error:', err.message);
+    console.error('❌ Auth Service Proxy Error:', err.message);
     if (res && !res.headersSent) {
       res.status(500).json({ 
         error: 'Error connecting to auth service',
@@ -38,10 +34,15 @@ router.use('/', httpProxy(AUTH_SERVICE_URL, {
     }
   },
 
-  // Configuraciones importantes
-  timeout: 30000,
+  // Configuración adicional
   changeOrigin: true,
-  preserveHeaderKeyCase: true
+  timeout: 30000,
+  
+  // Debug de respuestas
+  userResDecorator: (proxyRes, proxyResData, userReq, userRes) => {
+    console.log(`📥 Auth service response: ${proxyRes.statusCode} for ${userReq.method} ${userReq.url}`);
+    return proxyResData;
+  }
 }));
 
 module.exports = router;
