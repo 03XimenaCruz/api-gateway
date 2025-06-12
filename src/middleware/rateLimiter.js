@@ -2,49 +2,40 @@ const rateLimit = require('express-rate-limit');
 
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutos
-  max: 100, // Máximo 100 solicitudes por IP
+  max: 1000, // Máximo 100 solicitudes por IP
   message: {
     error: 'Too many requests from this IP, please try again later.',
-    retryAfter: 15 * 60 // En segundos
+    retryAfter: 15 * 60 // 15 minutos en segundos
   },
   
-  // ✅ Configuración específica para Railway/proxies
-  standardHeaders: true, // Retorna rate limit info en headers `RateLimit-*`
-  legacyHeaders: false, // Deshabilita headers `X-RateLimit-*`
+  // ✅ Configuración para proxies (Railway, Heroku, etc.)
+  trustProxy: true,
   
-  // ✅ Configurar key generator para proxies
-  keyGenerator: (req) => {
-    // Usar la IP real del cliente desde el proxy
-    return req.ip || req.connection.remoteAddress;
+  // ✅ Configurar el generador de claves para manejar proxies
+  keyGenerator: (req, res) => {
+    // Usar la IP real del cliente, considerando proxies
+    return req.ip || req.connection.remoteAddress || 'unknown';
   },
   
-  // ✅ Configurar para desarrollo vs producción
-  skip: (req) => {
-    // En desarrollo, skipear rate limiting para localhost
-    if (process.env.NODE_ENV !== 'production') {
-      return req.ip === '127.0.0.1' || req.ip === '::1';
-    }
-    return false;
+  // ✅ Headers de respuesta estándar
+  standardHeaders: true,
+  legacyHeaders: false,
+  
+  // ✅ Configuración de skip para health checks
+  skip: (req, res) => {
+    // No aplicar rate limiting a health checks
+    return req.path === '/health' || req.path === '/test-cors';
   },
   
   // ✅ Handler personalizado para debugging
-  handler: (req, res) => {
-    console.log(`🚫 Rate limit exceeded for IP: ${req.ip}`);
-    res.status(429).json({
-      error: 'Too many requests',
-      message: 'You have exceeded the rate limit. Please try again later.',
-      retryAfter: Math.round(req.rateLimit.resetTime / 1000),
-      limit: req.rateLimit.limit,
-      current: req.rateLimit.current,
-      remaining: req.rateLimit.remaining
-    });
+  handler: (req, res, next, options) => {
+    console.log(`🚫 Rate limit exceeded for IP: ${req.ip} on ${req.path}`);
+    res.status(options.statusCode).json(options.message);
   },
   
-  // ✅ Configuración para evitar errores con proxies
-  validate: {
-    xForwardedForHeader: false, // Deshabilitar validación estricta
-    trustProxy: true // Confiar en proxy settings
-  }
+  // ✅ Configuración de respuesta para OPTIONS
+  skipSuccessfulRequests: false,
+  skipFailedRequests: false,
 });
 
 module.exports = limiter;
