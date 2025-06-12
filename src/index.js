@@ -16,14 +16,21 @@ const app = express();
 const server = http.createServer(app);
 const PORT = process.env.PORT || 3000;
 
+// ✅ CONFIGURAR TRUST PROXY PRIMERO (para Railway y otros proxies)
+app.set('trust proxy', true);
+
 // ✅ CORS DEBE IR PRIMERO - ANTES DE TODO
 // corsMiddleware ahora es un array [debugCors, corsMiddleware]
 app.use(corsMiddleware);
 
-// Luego los demás middlewares
-app.use(express.json());
+// ✅ Luego rate limiting (que necesita trust proxy)
 app.use(rateLimiter);
+
+// ✅ Después logging
 app.use(logger);
+
+// ✅ Finalmente JSON parsing
+app.use(express.json());
 
 // Validar BID_SERVICE_URL para WebSocket
 const BID_SERVICE_URL = process.env.BID_SERVICE_URL || 'http://192.168.1.181:3003';
@@ -63,6 +70,22 @@ app.use('/api/bids', bidRoutes);
 // Ruta de prueba
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'API Gateway is running' });
+});
+
+// ✅ Ruta para probar CORS específicamente
+app.get('/test-cors', (req, res) => {
+  res.status(200).json({ 
+    status: 'CORS OK',
+    origin: req.get('origin'),
+    headers: req.headers,
+    timestamp: new Date().toISOString()
+  });
+});
+
+// ✅ Ruta OPTIONS específica para auth (debugging)
+app.options('/api/auth/*', (req, res) => {
+  console.log('🔍 Manual OPTIONS handler for auth:', req.url);
+  res.status(200).end();
 });
 
 // Manejo de errores
